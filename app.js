@@ -1,10 +1,9 @@
-// change this to reference the dataset you chose to work with.
-import { bikeShare as chartData } from "./data/bikeShare.js";
+// Import dataset
+import { gameSales as chartData } from "./data/gameSales.js";
 
-// --- DOM helpers ---
-const monthSelect = document.getElementById("monthSelect");
-const hoodSelect = document.getElementById("hoodSelect");
-const metricSelect = document.getElementById("metricSelect");
+// --- DOM ---
+const yearSelect = document.getElementById("yearSelect");
+const genreSelect = document.getElementById("genreSelect");
 const chartTypeSelect = document.getElementById("chartType");
 const renderBtn = document.getElementById("renderBtn");
 const dataPreview = document.getElementById("dataPreview");
@@ -12,166 +11,178 @@ const canvas = document.getElementById("chartCanvas");
 
 let currentChart = null;
 
-// --- Populate dropdowns from data ---
-const months = [...new Set(chartData.map(r => r.month))];
-const hoods = [...new Set(chartData.map(r => r.hood))];
+// --- Populate Dropdowns ---
+const years = [...new Set(chartData.map(r => r.year))];
+const genres = [...new Set(chartData.map(r => r.genre))];
 
-months.forEach(m => monthSelect.add(new Option(m, m)));
-hoods.forEach(h => hoodSelect.add(new Option(h, h)));
+years.forEach(y => yearSelect.add(new Option(y, y)));
+genres.forEach(g => genreSelect.add(new Option(g, g)));
 
-monthSelect.value = months[0];
-hoodSelect.value = hoods[0];
+yearSelect.value = years[0];
+genreSelect.value = genres[0];
 
-// Preview first 6 rows
+// Preview first rows
 dataPreview.textContent = JSON.stringify(chartData.slice(0, 6), null, 2);
 
-// --- Main render ---
+// --- Render Button ---
 renderBtn.addEventListener("click", () => {
-  const chartType = chartTypeSelect.value;
-  const month = monthSelect.value;
-  const hood = hoodSelect.value;
-  const metric = metricSelect.value;
+  const type = chartTypeSelect.value;
+  const year = parseInt(yearSelect.value);
+  const genre = genreSelect.value;
 
-  // Destroy old chart if it exists (common Chart.js gotcha)
   if (currentChart) currentChart.destroy();
 
-  // Build chart config based on type
-  const config = buildConfig(chartType, { month, hood, metric });
+  let config;
+
+  if (type === "bar") config = barSalesByPlatform(year);
+  else if (type === "line") config = lineSalesOverYears(genre);
+  else if (type === "doughnut") config = doughnutRegionShare(year);
+  else if (type === "scatter") config = scatterReviewVsSales(year);
+  else if (type === "radar") config = radarPublisherComparison(year);
+  else config = barSalesByPlatform(year);
 
   currentChart = new Chart(canvas, config);
 });
 
-// --- Students: you’ll edit / extend these functions ---
-function buildConfig(type, { month, hood, metric }) {
-  if (type === "bar") return barByNeighborhood(month, metric);
-  if (type === "line") return lineOverTime(hood, ["trips", "revenueUSD"]);
-  if (type === "scatter") return scatterTripsVsTemp(hood);
-  if (type === "doughnut") return doughnutMemberVsCasual(month, hood);
-  if (type === "radar") return radarCompareNeighborhoods(month);
-  return barByNeighborhood(month, metric);
-}
 
-// Task A: BAR — compare neighborhoods for a given month
-function barByNeighborhood(month, metric) {
-  const rows = chartData.filter(r => r.month === month);
+// bar chart showing sales by platform for a given year
+function barSalesByPlatform(year) {
+  const rows = chartData.filter(r => r.year === year);
+  const grouped = {};
 
-  const labels = rows.map(r => r.hood);
-  const values = rows.map(r => r[metric]);
+  rows.forEach(r => {
+    grouped[r.platform] = (grouped[r.platform] || 0) + r.unitsM;
+  });
 
   return {
     type: "bar",
     data: {
-      labels,
+      labels: Object.keys(grouped),
       datasets: [{
-        label: `${metric} in ${month}`,
-        data: values
+        label: `Sales (Millions) in ${year}`,
+        data: Object.values(grouped)
       }]
     },
     options: {
-      responsive: true,
       plugins: {
-        title: { display: true, text: `Neighborhood comparison (${month})` }
-      },
-      scales: {
-        y: { title: { display: true, text: metric } },
-        x: { title: { display: true, text: "Neighborhood" } }
+        title: { display: true, text: `Sales by Platform (${year})` }
       }
     }
   };
 }
 
-// Task B: LINE — trend over time for one neighborhood (2 datasets)
-function lineOverTime(hood, metrics) {
-  const rows = chartData.filter(r => r.hood === hood);
 
-  const labels = rows.map(r => r.month);
+// line chart showing sales trends over time for a given genre
+function lineSalesOverYears(genre) {
+  const rows = chartData.filter(r => r.genre === genre);
+  const grouped = {};
 
-  const datasets = metrics.map(m => ({
-    label: m,
-    data: rows.map(r => r[m])
-  }));
+  rows.forEach(r => {
+    grouped[r.year] = (grouped[r.year] || 0) + r.unitsM;
+  });
 
   return {
     type: "line",
-    data: { labels, datasets },
+    data: {
+      labels: Object.keys(grouped),
+      datasets: [{
+        label: `${genre} Sales Trend`,
+        data: Object.values(grouped)
+      }]
+    },
     options: {
-      responsive: true,
       plugins: {
-        title: { display: true, text: `Trends over time: ${hood}` }
-      },
-      scales: {
-        y: { title: { display: true, text: "Value" } },
-        x: { title: { display: true, text: "Month" } }
+        title: { display: true, text: `Sales Over Time (${genre})` }
       }
     }
   };
 }
 
-// SCATTER — relationship between temperature and trips
-function scatterTripsVsTemp(hood) {
-  const rows = chartData.filter(r => r.hood === hood);
 
-  const points = rows.map(r => ({ x: r.tempC, y: r.trips }));
+//doughnut chart showing regional market share for a given year
+function doughnutRegionShare(year) {
+  const rows = chartData.filter(r => r.year === year);
+  const grouped = {};
+
+  rows.forEach(r => {
+    grouped[r.region] = (grouped[r.region] || 0) + r.unitsM;
+  });
+
+  return {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(grouped),
+      datasets: [{
+        label: "Regional Share (Millions)",
+        data: Object.values(grouped)
+      }]
+    },
+    options: {
+      plugins: {
+        title: { display: true, text: `Regional Market Share (${year})` }
+      }
+    }
+  };
+}
+
+
+//scatter plot of review score vs sales for a given year
+function scatterReviewVsSales(year) {
+  const rows = chartData.filter(r => r.year === year);
+
+  const points = rows.map(r => ({
+    x: r.reviewScore,
+    y: r.unitsM
+  }));
 
   return {
     type: "scatter",
     data: {
       datasets: [{
-        label: `Trips vs Temp (${hood})`,
+        label: `Review Score vs Sales (${year})`,
         data: points
       }]
     },
     options: {
-      plugins: {
-        title: { display: true, text: `Does temperature affect trips? (${hood})` }
-      },
       scales: {
-        x: { title: { display: true, text: "Temperature (C)" } },
-        y: { title: { display: true, text: "Trips" } }
+        x: { title: { display: true, text: "Review Score" } },
+        y: { title: { display: true, text: "Sales (Millions)" } }
       }
     }
   };
 }
 
-// DOUGHNUT — member vs casual share for one hood + month
-function doughnutMemberVsCasual(month, hood) {
-  const row = chartData.find(r => r.month === month && r.hood === hood);
 
-  const member = Math.round(row.memberShare * 100);
-  const casual = 100 - member;
+// radar chart comparing publishers on multiple metrics for a given year
+function radarPublisherComparison(year) {
+  const rows = chartData.filter(r => r.year === year);
+  const publishers = [...new Set(rows.map(r => r.publisher))];
 
-  return {
-    type: "doughnut",
-    data: {
-      labels: ["Members (%)", "Casual (%)"],
-      datasets: [{ label: "Rider mix", data: [member, casual] }]
-    },
-    options: {
-      plugins: {
-        title: { display: true, text: `Rider mix: ${hood} (${month})` }
-      }
-    }
-  };
-}
+  const datasets = publishers.map(pub => {
+    const pubRows = rows.filter(r => r.publisher === pub);
 
-// RADAR — compare neighborhoods across multiple metrics for one month
-function radarCompareNeighborhoods(month) {
-  const rows = chartData.filter(r => r.month === month);
+    const totalUnits = pubRows.reduce((sum, r) => sum + r.unitsM, 0);
+    const totalRevenue = pubRows.reduce((sum, r) => sum + r.revenueUSD, 0);
+    const avgScore =
+      pubRows.reduce((sum, r) => sum + r.reviewScore, 0) / pubRows.length;
+    const esportsCount =
+      pubRows.reduce((sum, r) => sum + r.esports, 0);
 
-  const metrics = ["trips", "revenueUSD", "avgDurationMin", "incidents"];
-  const labels = metrics;
-
-  const datasets = rows.map(r => ({
-    label: r.hood,
-    data: metrics.map(m => r[m])
-  }));
+    return {
+      label: pub,
+      data: [totalUnits, totalRevenue, avgScore, esportsCount]
+    };
+  });
 
   return {
     type: "radar",
-    data: { labels, datasets },
+    data: {
+      labels: ["Units Sold", "Revenue", "Avg Review", "Esports Titles"],
+      datasets
+    },
     options: {
       plugins: {
-        title: { display: true, text: `Multi-metric comparison (${month})` }
+        title: { display: true, text: `Publisher Comparison (${year})` }
       }
     }
   };

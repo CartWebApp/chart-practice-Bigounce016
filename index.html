@@ -3,32 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BikeShare Data Dashboard (Chart.js Lab)</title>
+  <title>Game Sales Data Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Chart.js via CDN (official docs recommend CDN options like jsDelivr) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@latest/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
   <header class="container">
-    <h1>BikeShare Data Dashboard</h1>
+    <h1>Game Sales Data Dashboard</h1>
     <p class="sub">
-      Build charts from real-ish city data. Start with Bar + Line, then pick an extension chart.
+      Visualizing video game sales trends across years, regions, and publishers.
     </p>
   </header>
 
   <main class="container grid">
+
+    <!-- Controls -->
     <section class="card">
       <h2>Controls</h2>
 
-      <label class="label">Chart</label>
+      <label class="label">Chart Type</label>
       <select id="chartType">
-        <option value="bar" selected>Bar (compare neighborhoods)</option>
-        <option value="line">Line (trend over time)</option>
-        <option value="scatter">Scatter (relationship)</option>
-        <option value="doughnut">Doughnut (parts of whole)</option>
-        <option value="radar">Radar (multi-metric compare)</option>
+        <option value="bar" selected>Bar (Sales by Platform)</option>
+        <option value="line">Line (Sales Over Years)</option>
+        <option value="doughnut">Doughnut (Region Share)</option>
+        <option value="scatter">Scatter (Review vs Sales)</option>
+        <option value="radar">Radar (Publisher Comparison)</option>
       </select>
 
       <label class="label">Year</label>
@@ -37,42 +39,32 @@
       <label class="label">Genre</label>
       <select id="genreSelect"></select>
 
-      <label class="label">Platform</label>
-      <select id="platformSelect"></select>
-
-      <label class="label">Metric</label>
-      <select id="metricSelect">
-        <option value="region" selected>Region</option>
-        <option value="revenueUSD">Revenue (USD)</option>
-        <option value="Pubisher">Publisher</option>
-        <option value="unitsM">Incidents</option>
-        <option value="priceUSD">Price (USD)</option>
-        <option value="reviewScore">Review Score</option>
-      </select>
-
       <button id="renderBtn">Render Chart</button>
 
       <div class="hint">
-        <strong>Goal:</strong> Make at least 2 different chart types using the dataset.
+        <strong>Goal:</strong> Use multiple chart types to analyze the dataset.
       </div>
     </section>
 
+    <!-- Chart -->
     <section class="card chartCard">
       <h2>Chart</h2>
       <canvas id="chartCanvas" height="140"></canvas>
       <p class="tiny">
-        If your chart doesn’t update, make sure you destroy the old chart instance first.
+        If your chart doesn’t update, make sure you destroy the old chart instance.
       </p>
     </section>
 
+    <!-- Dataset Preview -->
     <section class="card">
-      <h2>Dataset preview</h2>
+      <h2>Dataset Preview</h2>
       <pre id="dataPreview"></pre>
     </section>
+
   </main>
 
   <footer class="container foot">
-    <span>Chart.js Lab — Intro JS + Data Visualization</span>
+    <span>Chart.js Lab — Game Sales Visualization</span>
   </footer>
 
   <script type="module" src="app.js"></script>
